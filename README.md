@@ -4,7 +4,7 @@ A python script that gets the stock information as per the company symbol
 provided by the user from [Mero Lagani](https://merolagani.com/LatestMarket.aspx). This
 script supports for the stock information of Nepal only.
 
-<img src="NepalStockTracker/assets/1.png">
+<img src="https://github.com/ghanteyyy/NepalStockTracker/raw/main/NepalStockTracker/assets/1.png">
 
 # Installation
 
