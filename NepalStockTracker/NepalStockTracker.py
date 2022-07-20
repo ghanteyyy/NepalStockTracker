@@ -1,26 +1,16 @@
 import os
-import re
 import sys
 import timeit
-import socket
-import winsound
 from tkinter import *
 from tkinter.font import Font
 import tkinter.ttk as ttk
+import pygame
 import requests
-from bs4 import BeautifulSoup
-
-try:  # When using as a module
-    from . import exceptions
-
-except ImportError:  # When using as an application
-    import exceptions
+import Search
 
 
 class StockTracker:
     def __init__(self, company_symbol=None, show_gui=True):
-        self.URL = 'https://merolagani.com/CompanyDetail.aspx?symbol='
-
         if show_gui:
             self.StartTimer = 0
             self.ErrorTimer = None
@@ -29,12 +19,22 @@ class StockTracker:
             self.GlobalSearchIndex = 0
             self.DEFAULTTEXT = 'COMPANY SYMBOL'
 
+            if sys.platform == 'win32':
+                self.ErrorAudio = self.ResourcePath('WinErrSound.wav')
+
+            else:
+                self.ErrorAudio = self.ResourcePath('LinuxErrSound.wav')
+
+            pygame.mixer.init()
+            pygame.mixer.music.load(self.ErrorAudio)
+
             self.master = Tk()
             self.master.withdraw()
             self.master.title('Nepal Stock Tracker')
             self.master.iconbitmap(self.ResourcePath('icon.ico'))
+            self.SEARCH = Search.Search(self.ShowErrorMessage, self.CheckInternet, master=self.master)
 
-            self.OptionValues = self.GetComboValues()
+            self.OptionValues = self.SEARCH.GetCompaniesNameList()
             self.TitleImage = PhotoImage(file=self.ResourcePath('TitleImage.png'))
 
             self.TitleLabel = Label(self.master, image=self.TitleImage)
@@ -53,16 +53,17 @@ class StockTracker:
 
             self.InitialPosition()
 
-            self.master.bind_all('<Control-r>', self.Retry)
+            self.master.bind('<Control-r>', self.Retry)
             self.master.bind('<Button-1>', self.ChangeFocus)
-            self.CompanyName.bind('<KeyRelease>', self.Search)
             self.master.bind_all('<F5>', self.GetMarketDetails)
             self.CompanyName.bind('<Return>', self.GetMarketDetails)
+            self.CompanyName.bind('<KeyRelease>', self.AutoComplete)
 
             self.master.mainloop()
 
         else:
-            self.details = self.get_data(company_symbol)
+            self.SEARCH = Search.Search(self.ShowErrorMessage, self.CheckInternet)
+            self.details = self.SEARCH.get_data(company_symbol)
 
     def InitialPosition(self):
         '''Set window position to the center of the screen when program starts first time'''
@@ -80,28 +81,11 @@ class StockTracker:
         self.OptionValues.sort()
         self.CompanyName['values'] = self.OptionValues
 
-    def GetComboValues(self):
-        '''Get all company names and its abbreviation from mero lagani website'''
-
-        if self.CheckInternet():
-            source = requests.get('https://merolagani.com/handlers/AutoSuggestHandler.ashx?type=Company')
-            contents = source.json()
-
-            companies = [content['l'] for content in contents]
-            companies = list(filter(lambda x: not x.lower().startswith('test'), companies))
-            companies.sort()
-
-            return companies
-
-        else:
-            self.master.after(250, lambda: self.ShowErrorMessage('Failed to get Company Names. No Internet.\nPress Control + R to retry.', _time=5000, height=230))
-            return [self.DEFAULTTEXT]
-
     def Retry(self, event=None):
         '''Retry to get the company names if not retrieved at first'''
 
         if self.CheckInternet():
-            self.OptionValues = self.GetComboValues()
+            self.OptionValues = self.SEARCH.GetCompaniesNameList()
             self.CompanyNameVar.set(self.DEFAULTTEXT)
             self.CompanyName.config(values=self.OptionValues)
             self.ShowErrorMessage('Retrieved Company Names successfully')
@@ -113,13 +97,11 @@ class StockTracker:
         '''Check if the user is connected to internet'''
 
         try:
-            socket.create_connection(("1.1.1.1", 53))
+            requests.get('https://google.com')
             return True
 
-        except OSError:
-            pass
-
-        return False
+        except requests.ConnectionError:
+            return False
 
     def ChangeFocus(self, event=None):
         '''Change focus to the respective widget where user has clicked'''
@@ -129,66 +111,6 @@ class StockTracker:
 
         if not isinstance(widget, (ttk.Combobox, type(None))):
             widget.focus_set()
-
-    def get_data(self, CompanySymbol):
-        full_url = self.URL + CompanySymbol
-
-        if self.CheckInternet():
-            page = requests.get(full_url)  # Getting information of the given company
-            soup = BeautifulSoup(page.content, "html.parser")
-
-            company_name = soup.findAll(id="ctl00_ContentPlaceHolder1_CompanyDetail1_companyName")[0].text  # Extracting company name
-
-            if company_name:
-                share_value = soup.findAll(id="ctl00_ContentPlaceHolder1_CompanyDetail1_lblMarketPrice")[0].text  # Extracting market price
-                sector = soup.findAll("td", {"class": "text-primary"})[0].text.strip()  # Extracting sector of the company
-                change = soup.findAll(id="ctl00_ContentPlaceHolder1_CompanyDetail1_lblChange")[0].text  # Extracting percentage change of the company
-
-                # Extracting date of transaction done by the company
-                date_pattern = re.compile(r'\d+/\d+/\d+ \d+:\d+:\d+')
-                date = re.search(date_pattern, page.text)
-
-                if date is None:  # When no date is available
-                    date = '- - -'
-
-                else:
-                    date = date.group()
-
-                # Extracting high and low value of the company
-                high_low_pattern = re.compile(r'\d+[,\d+]\d+[.\d+]\d+-\d+[,\d+]\d+[.\d+]\d+')
-                high_low = re.search(high_low_pattern, page.text)
-                high_low = high_low.group(0)
-
-                # Extracting average market value of the company
-                average_pattern = re.compile(r'\d+\.\d+')
-                all_numerical_values = re.findall(average_pattern, page.text)
-
-                # Here, check variable stores the value just above of 120 Day Average(one of the value in the website)
-                check = high_low.split('-')[1]
-
-                if check not in all_numerical_values:
-                    # if value above the 120 Day Average does not exits it means
-                    # that there is comma within the 120 Day Average value
-                    average_pattern = re.compile(r'\d+,\d+\.\d+')
-                    all_numerical_values = re.findall(average_pattern, page.text)
-
-                average_value = re.findall(average_pattern, page.text)  # Extracting value before of 120 Day Average
-                average_value = average_value[all_numerical_values.index(check) + 1]  # Getting the average_value
-
-                return {'company_name': company_name,
-                        'sector': sector,
-                        'market_price': share_value,
-                        'change': change,
-                        'last_traded_on': date,
-                        'high_low': high_low,
-                        'average': average_value
-                    }
-
-            else:
-                raise exceptions.CompanyNotFoundError(f'{CompanySymbol} not found')
-
-        else:
-            raise exceptions.ConnectionError('No internet connection')
 
     def GetMarketDetails(self, event=None):
         '''Display company details if available'''
@@ -208,15 +130,10 @@ class StockTracker:
 
         if value and value != self.DEFAULTTEXT:
             if self.CheckInternet():
-                full_url = self.URL + value
+                details = self.SEARCH.get_data(value)
 
-                page = requests.get(full_url)  # Getting information of the given company
-                soup = BeautifulSoup(page.content, "html.parser")
-
-                details = self.get_data(value)
-                company_name = details['company_name']
-
-                if company_name:
+                if details:
+                    company_name = details['company_name']
                     sector = details['sector']
                     share_value = details['market_price']
                     change = details['change']
@@ -275,7 +192,7 @@ class StockTracker:
                     average_label_value = Label(average_frame, text=average_value, width=20, anchor='e', font=font2)
                     average_label_value.pack(side=RIGHT)
 
-                    changed = soup.findAll(id="ctl00_ContentPlaceHolder1_CompanyDetail1_lblMarketPrice")[0].prettify()
+                    changed = self.SEARCH.Profit_Loss_Or_Neutral(value)
 
                     if change == '0 %':  # When company stock price has not been changed
                         color = '#ed9c28'
@@ -290,8 +207,10 @@ class StockTracker:
                     change_value.config(fg=color)
 
                     self.master.update()
-                    # self.DetailsFrame.config(pady=12)
-                    self.master.geometry(f'304x{self.master.winfo_reqheight()}')
+                    self.master.geometry(f'{self.master.winfo_width()}x{self.master.winfo_reqheight()}')
+
+                else:
+                    self.ShowErrorMessage(f'Cannot retrieve data.\nMaybe {value} has not\npublished its market value yet.', _time=2500, height=255)
 
             else:
                 # When user is not connected to internet
@@ -306,20 +225,21 @@ class StockTracker:
             self.ShowErrorMessage(error_message)
 
     def ShowErrorMessage(self, error_message, _time=1500, height=215):
-        '''Show error message when there is no internet and when user
-           does not provide any company name
+        '''
+        Show error message when there is no internet and when user
+        does not provide any company name
 
-           error_message: The actual error message to display
-           _time: For long should the error message be displayed (in millisecond)
-           height: Height of window to fit error message        (in pixel)'''
+        error_message: The actual error message to display
+        _time: For long should the error message be displayed (in millisecond)
+        height: Height of window to fit error message        (in pixel)
+        '''
 
         if self.ErrorTimer is None:
             for child in self.DetailsFrame.winfo_children():
                 child.destroy()
 
-        winsound.MessageBeep()
+            pygame.mixer.music.play()
 
-        if self.ErrorTimer is None:
             error_message_var = StringVar()
             error_message_var.set(error_message)
 
@@ -332,7 +252,7 @@ class StockTracker:
         else:
             self.master.after_cancel(self.ErrorTimer)
             self.ErrorTimer = None
-            self.ShowErrorMessage(error_message)
+            self.master.after(0, lambda: self.ShowErrorMessage(error_message, _time, height))
 
     def RemoveErrorMessage(self, lbl):
         '''Destroy the error message'''
@@ -341,7 +261,7 @@ class StockTracker:
         self.ErrorTimer = None
         self.master.geometry('304x196')
 
-    def Search(self, event=None):
+    def AutoComplete(self, event=None):
         '''Search value when the focus is in ttk.Combobox'''
 
         _char = event.char.upper()
@@ -372,13 +292,15 @@ class StockTracker:
             self.CompanyNameVar.set(self.ToSelectValue)
 
     def ResourcePath(self, FileName):
-        '''Get absolute path to resource from temporary directory
+        '''
+        Get absolute path to resource from temporary directory
 
         In development:
             Gets path of files that are used in this script like icons, images or file of any extension from current directory
 
         After compiling to .exe with pyinstaller and using --add-data flag:
-            Gets path of files that are used in this script like icons, images or file of any extension from temporary directory'''
+            Gets path of files that are used in this script like icons, images or file of any extension from temporary directory
+        '''
 
         try:
             base_path = sys._MEIPASS  # PyInstaller creates a temporary directory and stores path of that directory in _MEIPASS
