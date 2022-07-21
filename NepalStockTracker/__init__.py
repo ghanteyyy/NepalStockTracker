@@ -20,17 +20,17 @@ Usage:
 
 
 __all__ = ['tracker']
-__version__ = '0.1.0'
+__version__ = '0.1.5'
 __author__ = 'ghanteyyy'
 
 
 from . import NepalStockTracker
 
 
-def tracker(company_symbol, show_gui):
-    ''' - company_symbol must be the abbreviation of company name
-        - show_gui must be either True or False
-            when True it shows the GUI window
+def tracker(company_symbol=None, show_gui=False):
+    '''
+    - company_symbol must be the abbreviation of company name
+    - show_gui must be either True or False
     '''
 
     nsm = NepalStockTracker.StockTracker(company_symbol, show_gui)
