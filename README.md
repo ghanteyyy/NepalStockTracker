@@ -14,7 +14,13 @@ NepalStockTracker is available on PyPI. You can install it through pip:
 
 # Usage
 
-- If you want GUI window then Run **NepalStockTracker.py** directly
+- If you want a GUI window
+
+  ```python
+  from NepalStockTracker import tracker
+
+  window = tracker(show_gui=True)
+  ```
 
 - To get data only
 
