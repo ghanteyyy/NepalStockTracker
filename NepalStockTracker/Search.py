@@ -5,7 +5,7 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-import exceptions
+from . import exceptions
 
 
 class Search:

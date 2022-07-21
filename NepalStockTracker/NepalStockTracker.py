@@ -6,7 +6,7 @@ from tkinter.font import Font
 import tkinter.ttk as ttk
 import pygame
 import requests
-import Search
+from . import Search
 
 
 class StockTracker:
