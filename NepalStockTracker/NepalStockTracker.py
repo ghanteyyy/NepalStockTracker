@@ -6,7 +6,12 @@ from tkinter.font import Font
 import tkinter.ttk as ttk
 import pygame
 import requests
-from . import Search
+
+try:
+    from . import Search
+
+except ImportError:
+    import Search
 
 
 class StockTracker:
