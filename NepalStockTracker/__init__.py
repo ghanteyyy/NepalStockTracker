@@ -20,11 +20,11 @@ Usage:
 
 
 __all__ = ['tracker']
-__version__ = '0.1.7'
+__version__ = '0.2.0'
 __author__ = 'ghanteyyy'
 
 
-from . import NepalStockTracker
+from NepalStockTracker import main
 
 
 def tracker(company_symbol=None, show_gui=False):
@@ -33,7 +33,7 @@ def tracker(company_symbol=None, show_gui=False):
     - show_gui must be either True or False
     '''
 
-    nsm = NepalStockTracker.StockTracker(company_symbol, show_gui)
+    nsm = main.StockTracker(company_symbol, show_gui)
 
     if nsm:
         return nsm
