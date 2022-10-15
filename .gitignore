@@ -1,4 +1,5 @@
 dist/
 build/
+*.json
 __pycache__/
 NepalStockTracker.egg-info/
