@@ -1,31 +1,40 @@
 from tkinter import *
-import tkinter.ttk as ttk
 
 try:  # When used as a package
-    import NepalStockTracker._photo_image as pi
+    from NepalStockTracker.Assets import Assets
 
 except ImportError:  # When used as a normal script
-    import _photo_image as pi
+    from Assets import Assets
 
 
 class _Entry:
-    def __init__(self, frame, style_name, default_text, bg='black', width=19, show=None):
+    '''
+    An Entry widget having a placeholder text like of HTML. When user
+    focuses to the entry widget then the placeholder text gets removed.
+    When user focuses out of that Entry widget without entering any value
+    then the placeholder text gets inserted.
+    '''
+
+    def __init__(self, frame, DefaultText, bg='black', width=19, show='', PasswordVisible=None):
         '''
-        An Entry widget having a placeholder text like of HTML. When user
-        focuses to the entry widget then the placeholder text gets removed.
-        When user focuses out of that Entry widget without entering any value
-        then the placeholder text gets inserted.
+        param:
+            frame               : Obj Frame to keep Entry widget
+            DefaultText         : Default text for each Entry widget
+            bg                  : Background color for frame
+            width               : Width for Entry widget
+            show                : Used to display ● in Password Entry widget
+            PasswordVisible     : Hide text when True
         '''
 
-        self.dot = '●'
         self.show = show
         self.frame = frame
         self.IsDefault = True
-        self.default_text = default_text
-        self.style_name = f'{style_name}.TEntry'
+        self.DefaultText = DefaultText
+        self.PasswordVisible = PasswordVisible
+        self.style_name = f'{DefaultText}.TEntry'
 
         self.var = StringVar()
-        self.var.set(self.default_text)
+        self.var.set(self.DefaultText)
 
         self.Frame = Frame(frame, bg=bg)
         self.Entry = Entry(self.Frame, textvariable=self.var, width=width, justify='center')
@@ -39,24 +48,23 @@ class _Entry:
 
     def FocusIn(self, event=None):
         '''
-        When ttk.Entry gets focus either by click
-        to it or by pressing TAB key
+        When Entry gets focus either by click to it or by pressing TAB key
         '''
 
         self.LineFrame.config(bg='#02c4f5')
 
-        if self.IsDefault and self.var.get().strip() == self.default_text:
-            self.IsDefault = False
+        if self.IsDefault and self.var.get().strip() == self.DefaultText:
             self.var.set('')
+            self.IsDefault = False
             self.Entry.config(fg='black')
 
-            if self.show is True:
-                self.Entry.config(show=self.dot)
+            if self.PasswordVisible and self.PasswordVisible.IsHidden:
+                self.Entry.config(show=self.show)
 
     def FocusOut(self, event=None):
         '''
-        When ttk.Entry gets focus out either by click
-        to another widget or by pressing TAB key
+        When Entry gets focus out either by click to another widget or by
+        pressing TAB key
         '''
 
         self.LineFrame.config(bg='#9da17d')
@@ -65,15 +73,15 @@ class _Entry:
             self.IsDefault = True
 
             self.Entry.config(fg='grey')
-            self.var.set(self.default_text)
+            self.var.set(self.DefaultText)
 
-            if self.show is True:
+            if self.PasswordVisible and self.PasswordVisible.IsHidden:
                 self.Entry.config(show='')
 
     def SetToDefault(self):
         '''
-        Set the default values to respective ttk.Entry when
-        user finish adding, deleting or renaming values
+        Set the default values to respective Entry when user finish adding,
+        deleting or renaming values
         '''
 
         self.IsDefault = True
@@ -82,51 +90,66 @@ class _Entry:
             self.show = True
             self.Entry.config(show='')
 
-        self.var.set(self.default_text)
+        self.var.set(self.DefaultText)
         self.Entry.config(fg='grey')
 
 
 class _Password_Entry:
     '''
-    An Entry widget having placeholder text "●". Also
-    draw button that hide or show the text when clicked.
+    An Entry widget having placeholder text "●". Also draw button that hide
+    or show the text when clicked.
     '''
 
-    def __init__(self, frame, style_name, default_text, bg, width=19, show=None):
-        self.pi = pi.Image()
-        self.IsPasswordHidden = True
+    def __init__(self, frame, DefaultText, bg, width=19):
+        '''
+        param:
+            frame           : Obj Frame to keep Entry widget
+            DefaultText    : Default text for each Entry widget
+            bg              : Background color for frame
+            width           : Width for Entry widget
+            show            : Used to display ● in Password Entry widget
+        '''
+
+        self.Assets = Assets()
+        self.IsPasswordHidden = PasswordVisible()
 
         self.bg = bg
-        self.show = show
+        self.show = '●'
         self.width = width
         self.frame = frame
-        self.style_name = style_name
-        self.default_text = default_text
+        self.DefaultText = DefaultText
 
         self.PasswordFrame = Frame(self.frame, bg=self.bg)
 
-        self.PasswordEntry = _Entry(self.PasswordFrame, self.style_name, self.default_text, show=True, width=width, bg=self.bg)
+        self.PasswordEntry = _Entry(self.PasswordFrame, self.DefaultText, show=self.show, width=width, bg=self.bg, PasswordVisible=self.IsPasswordHidden)
         self.PasswordEntry.Frame.pack(side=LEFT)
-        self.ShowHidePassword = Button(self.PasswordFrame, image=self.pi.HidePasswordImage, bd=0, bg=self.bg, activebackground=self.bg, cursor='hand2', takefocus=False, command=self.ShowHidePasswordCommand)
+        self.ShowHidePassword = Button(self.PasswordFrame, image=self.Assets.HidePasswordImage, bd=0, bg=self.bg, activebackground=self.bg, cursor='hand2', takefocus=False, command=self.ShowHidePasswordCommand)
         self.ShowHidePassword.pack(side=RIGHT, padx=(5, 0))
 
     def ShowHidePasswordCommand(self):
         '''
-        Toggle between "●" and text when user
-        clicks to hide-show-password button
+        Toggle between "●" and text when user clicks to hide-show-password button
         '''
 
-        if self.IsPasswordHidden:
-            self.IsPasswordHidden = False
-            self.PasswordEntry.show = False
+        if self.IsPasswordHidden.IsHidden:
+            self.IsPasswordHidden.IsHidden = False
             self.PasswordEntry.Entry.config(show='')
-            self.ShowHidePassword.config(image=self.pi.ShowPasswordImage)
+            self.ShowHidePassword.config(image=self.Assets.ShowPasswordImage)
 
         else:
-            self.IsPasswordHidden = True
-            self.PasswordEntry.show = True
+            self.IsPasswordHidden.IsHidden = True
 
             if self.PasswordEntry.IsDefault is False:
-                self.PasswordEntry.Entry.config(show=self.PasswordEntry.dot)
+                self.PasswordEntry.Entry.config(show=self.show)
 
-            self.ShowHidePassword.config(image=self.pi.HidePasswordImage)
+            self.ShowHidePassword.config(image=self.Assets.HidePasswordImage)
+
+
+class PasswordVisible:
+    '''
+    Set IsHidden attribute to True when password is not shown
+    else set it to False
+    '''
+
+    def __init__(self):
+        self.IsHidden = True
