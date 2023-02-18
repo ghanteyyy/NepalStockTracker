@@ -5,11 +5,18 @@ import tkinter.ttk as ttk
 
 class _ComboBox:
     '''
-    A combo-box with the list of fetched company names with
-    auto-complete functionality.
+    A combo-box with the list of fetched company names with auto-complete
+    functionality.
     '''
 
-    def __init__(self, master, frame, values):
+    def __init__(self, master, frame, values, DEFAULT_TEXT='COMPANY SYMBOL', width=41):
+        '''
+        param:
+            master      : Object of Tk
+            frame       : Frame to place combo-box
+            values      : Values for combo-box
+        '''
+
         self.master = master
         self.frame = frame
 
@@ -20,15 +27,23 @@ class _ComboBox:
         self.PreviousSearch = ''
         self.LocalSearchIndex = 0
 
-        self.DEFAULT_TEXT = 'COMPANY SYMBOL'
+        self.DEFAULT_TEXT = DEFAULT_TEXT
 
         self.ComboVar = StringVar()
         self.ComboVar.set(self.DEFAULT_TEXT)
 
-        self.ComboBox = ttk.Combobox(self.frame, textvariable=self.ComboVar, values=self.values, width=41, justify='center', state='readonly')
+        self.ComboBox = ttk.Combobox(self.frame, textvariable=self.ComboVar, values=self.values, width=width, justify='center', state='readonly')
 
         self.ComboBox.config(values=self.values)
+        self.ComboBox.bind('<Button-1>', self.SingleClick)
         self.ComboBox.bind('<KeyRelease>', self.AutoComplete)
+
+    def SingleClick(self, event):
+        '''
+        When user clicks to Combobox
+        '''
+
+        self.ComboBox.event_generate('<Down>', when='head')
 
     def AutoComplete(self, event=None):
         '''
@@ -47,16 +62,16 @@ class _ComboBox:
             if 0 < escaped < 0.27:
                 _char = self.PreviousSearch + _char
 
-        common_names = list(filter(lambda item: item.startswith(_char), self.values))
+        CommonNames = list(filter(lambda item: item.startswith(_char), self.values))
 
-        if self.PreviousSearch != _char or self.LocalSearchIndex == len(common_names) - 1:
+        if self.PreviousSearch != _char or self.LocalSearchIndex == len(CommonNames) - 1:
             self.LocalSearchIndex = 0
 
         self.PreviousSearch = _char
         self.StartTimer = timeit.default_timer()
 
-        if common_names:
-            self.ToSelectValue = common_names[self.LocalSearchIndex]
+        if CommonNames:
+            self.ToSelectValue = CommonNames[self.LocalSearchIndex]
             self.LocalSearchIndex += 1
 
             self.ComboBox.set(self.ToSelectValue)
