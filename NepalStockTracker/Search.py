@@ -11,8 +11,8 @@ except ImportError:  # When used as a normal script
 
 class Search:
     '''
-    Gets information of the given company by the user.
-    Also gets the list of companies names
+    Gets information of the given company by the user. Also gets the list
+    of companies names
     '''
 
     def __init__(self, ShowErrorMessage, CheckInternet, master=None):
@@ -24,7 +24,9 @@ class Search:
         self.CompanyURL = 'https://merolagani.com/handlers/AutoSuggestHandler.ashx?type=Company'
 
     def GetCompaniesNameList(self):
-        '''Get all company names and its abbreviation from mero lagani website'''
+        '''
+        Get all company names and its abbreviation from mero lagani website
+        '''
 
         if self.CheckInternet():
             source = requests.get(self.CompanyURL)
@@ -43,7 +45,12 @@ class Search:
             return [self.DEFAULTTEXT]
 
     def get_data(self, CompanySymbol):
-        '''Get given company information'''
+        '''
+        Get given company information
+
+        param:
+            CompanySymbol   : Name of Company Name
+        '''
 
         full_url = self.MarketURL + CompanySymbol
 
@@ -97,7 +104,13 @@ class Search:
             raise exceptions.ConnectionError('No internet connection')
 
     def Profit_Loss_Or_Neutral(self, CompanySymbol):
-        '''Return if the given company\'s value have been increased, decrease or nothing'''
+        '''
+        Return if the given company's value have been increased, decrease or
+        nothing
+
+        param:
+            CompanySymbol   : Name of Company Name
+        '''
 
         full_url = self.MarketURL + CompanySymbol
 
