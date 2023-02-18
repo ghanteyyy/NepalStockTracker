@@ -1,0 +1,38 @@
+Sat Feb 18 2023 - ghanteyyy <ghanteyyy@gmail.com> - 0.3.0
+    - FIXED: Removed unwanted "after" action
+    - FIXED: Assets path when used as executable
+    - FEATURE: Improved GUI
+    - FEATURE: Made same background color
+    - FEATURE: Hashed user name for better security
+    - FEATURE: Improved showing and hiding password
+    - FEATURE: Hiding pygame's welcome message when importing
+    - FEATURE: Update data in DashBoard only when market is open
+    - FEATURE: Added 'x' button to remove showing market details
+    - FEATURE: Entry widgets are binded with "Enter" key to submit/login
+    - OTHER: Added changelog
+    - OTHER: Improved comments and documentation
+
+Sat Oct 15 2022 - ghanteyyy <ghanteyyy@gmail.com> - 0.2.0
+    - FIXED: Improved imports
+    - FEATURE: Added functionality to SignUp, Login and store companies names.
+    - OTHER: Updated icon file
+    - OTHER: Added more files in .gitignore
+    - OTHER: Renamed NepalStockTracker.py -> main.py
+    - OTHER: Renamed TitleImage.png -> Title Image.png
+
+Fri Jul 22 2022 - ghanteyyy <ghanteyyy@gmail.com> - 0.1.7
+    - FIXED: Missing importing modules
+
+Thu Jul 21 2022 - ghanteyyy <ghanteyyy@gmail.com> - 0.1.5
+    - FIXED: Importing local modules
+    - OTHER: Added media files for pypi installation
+    - OTHER: Added code snippet to show gui window
+    - OTHER: Added build directory in .gitignore
+
+Wed Jul 20 2022 - ghanteyyy <ghanteyyy@gmail.com> - 0.1.0
+    - FIXED: Image address
+    - FIXED: Not getting complete high-low values
+    - FEATURE: Added error sound for window and other platforms
+
+Sat Jul 2 2022 - ghanteyyy <ghanteyyy@gmail.com> - 0.0.1
+    - First Release
