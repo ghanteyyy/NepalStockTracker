@@ -1,10 +1,14 @@
-import re
 import setuptools
 
 
 # Get version number from __init__.py
 with open('NepalStockTracker/__init__.py') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
+    lines = fd.readlines()
+
+    for line in lines:
+        if '__version__' in line:
+            version = line.split('=')[1].strip()[1:-1]
+            break
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
