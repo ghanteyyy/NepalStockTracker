@@ -26,18 +26,23 @@ def ResourcePath(FileName):
     Get absolute path to resource from temporary directory
 
     In development:
-        Gets path of files that are used in this script like icons, images or file of any extension from current directory
+        Gets path of files that are used in this script like icons, images or
+        file of any extension from current directory
 
     After compiling to .exe with pyinstaller and using --add-data flag:
-        Gets path of files that are used in this script like icons, images or file of any extension from temporary directory
+        Gets path of files that are used in this script like icons, images or
+        file of any extension from temporary directory
+
+    param:
+        FileName    : Name of asset
     '''
 
     try:
-        base_path = sys._MEIPASS  # PyInstaller creates a temporary directory and stores path of that directory in _MEIPASS
+        BasePath = sys._MEIPASS  # PyInstaller creates a temporary directory and stores path of that directory in _MEIPASS
 
     except AttributeError:
-        base_path = os.path.dirname(__file__)
+        BasePath = __file__
 
-    base_path = os.path.dirname(base_path)
+    BasePath = os.path.dirname(BasePath)
 
-    return os.path.join(base_path, 'assets', FileName)
+    return os.path.join(BasePath, 'assets', FileName)
