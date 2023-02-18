@@ -1,4 +1,4 @@
-from logging import exception
+import datetime
 import threading
 from tkinter import *
 import tkinter.ttk as ttk
@@ -7,34 +7,45 @@ from tkinter import messagebox
 try:  # When used as a package
     from NepalStockTracker.db import DB
     from NepalStockTracker import exceptions
-    import NepalStockTracker._photo_image as pi
+    from NepalStockTracker.Assets import Assets
     from NepalStockTracker._ComboBox import _ComboBox
 
 except ImportError:  # When used as a normal script
     import exceptions
     from db import DB
-    import _photo_image as pi
+    from Assets import Assets
     from _ComboBox import _ComboBox
 
 
 class DashBoard:
     '''
-    Show the information of respective user when
-    user logs in successfully
+    Show the information of respective user when user logs in successfully
     '''
 
-    def __init__(self, master, ComboValues, LOGIN, MainFrame, search, destroy_main_frame=None):
+    def __init__(self, master, ComboValues, LOGIN, MainFrame, search, DestroyedMainFrame=None):
+        '''
+        param:
+            master              : Object of Tk
+            ComboValues         : Values for ComboBox
+            LOGIN               : Object of _Login._Login
+            MainFrame           : Frame to keep widgets
+            search              : Object of Search.Search
+            DestroyedMainFrame  : None | True | False
+                                  If none then root window has been destroyed
+        '''
+
         self.sn = 0
         self.db = DB()
         self.LOGIN = LOGIN
         self.master = master
         self.PrevHash = None
-        self.pi = pi.Image()
-        self.RightBG = '#15c2af'
+        self.Assets = Assets()
+        self.RightBG = '#a4f5ec'
         self.MainFrame = MainFrame
+        self.IsScrollBarShown = False
         self.ComboValues = ComboValues
         self.username = self.LOGIN.username
-        self.destroy_main_frame = destroy_main_frame
+        self.DestroyedMainFrame = DestroyedMainFrame
 
         self.SEARCH = search
         self.EndThread = False
@@ -51,34 +62,33 @@ class DashBoard:
         self.DashboardFrame = Frame(self.master, bg=self.RightBG)
         self.DashboardFrame.pack()
 
-        self.LogOutButton = Button(self.DashboardFrame, image=self.pi.LogoutImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.LogOutButtonCommand)
-        self.LogOutButton.pack(side=RIGHT, fill='y')
+        self.LeftImage = Label(self.DashboardFrame, image=self.Assets.DashBoardImage, bg='#a4f5ec')
+        self.LeftImage.pack(side=LEFT)
 
-        self.LeftFrame = Frame(self.DashboardFrame)
-        self.LeftFrame.pack(side=LEFT)
         self.RightFrame = Frame(self.DashboardFrame, bg=self.RightBG)
         self.RightFrame.pack(side=RIGHT)
-
-        self.LeftImage = Label(self.LeftFrame, image=self.pi.DashBoardImage, bg='#a4f5ec')
-        self.LeftImage.pack()
 
         self.ComboFrame = Frame(self.RightFrame, bg=self.RightBG)
         self.ComboFrame.pack(pady=15)
 
-        self.combobox = _ComboBox(self.master, self.ComboFrame, self.ComboValues)
+        self.combobox = _ComboBox(self.master, self.ComboFrame, self.ComboValues, width=70)
         self.combobox.ComboBox.pack(side=LEFT, ipady=3)
-        self.add_button = Button(self.ComboFrame, image=self.pi.AddImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.AddButtonCommand)
-        self.add_button.pack(side=LEFT)
+        self.AddButton = Button(self.ComboFrame, image=self.Assets.AddImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.AddButtonCommand)
+        self.AddButton.pack(side=LEFT)
 
-        self.TreeviewFrame = Frame(self.RightFrame)
-        self.TreeviewFrame.pack(pady=(0, 10), padx=20)
-        self.Treeview = ttk.Treeview(self.TreeviewFrame, columns=('SN', 'Scrip', 'Sector', 'Price'), show='headings', height=15)
+        self.TreeviewFrame = Frame(self.RightFrame, bg=self.RightBG)
+        self.TreeviewFrame.pack(pady=(0, 10), padx=(20, 0))
+        self.TreeViewLeftFrame = Frame(self.TreeviewFrame, bg=self.RightBG)
+        self.TreeViewLeftFrame.pack(side=LEFT)
+
+        self.Treeview = ttk.Treeview(self.TreeViewLeftFrame, columns=('SN', 'Scrip', 'Sector', 'Price'), show='headings', height=15)
         self.Treeview.pack(side=LEFT)
 
-        self.Scrollbar = ttk.Scrollbar(self.TreeviewFrame, orient='vertical', command=self.Treeview.yview)
-        self.ShowScrollBar()
+        self.Scrollbar = ttk.Scrollbar(self.TreeViewLeftFrame, orient='vertical', command=self.Treeview.yview)
+        self.LogOutButton = Button(self.TreeviewFrame, image=self.Assets.LogoutImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.LogOutButtonCommand)
+        self.LogOutButton.pack(side=RIGHT)
 
-        self.BackButton = Button(self.RightFrame, image=self.pi.BackImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.BackButtonCommand)
+        self.BackButton = Button(self.RightFrame, image=self.Assets.BackImage, bd=0, cursor='hand2', bg=self.RightBG, activebackground=self.RightBG, command=self.BackButtonCommand)
         self.BackButton.pack(pady=(20, 10))
 
         self.Treeview.column('SN', width=50, anchor='center')
@@ -93,6 +103,8 @@ class DashBoard:
 
         self.Treeview.bind('<Button-3>', self.RightClick)
         self.Treeview.bind('<Motion>', self.RestrictResizingHeading)
+        self.Treeview.bind('<Button-1>', self.RestrictResizingHeading)
+        self.combobox.ComboBox.bind('<Return>', self.AddButtonCommand)
 
         self.Threads = []
 
@@ -113,73 +125,103 @@ class DashBoard:
 
     def ShowScrollBar(self):
         '''
-        Show ScrollBar when the contents of TreeView is
-        more than the height of TreeView
+        Show ScrollBar when the contents of TreeView is more than its height
         '''
 
-        if self.Treeview.cget('height') < len(self.Treeview.get_children()):
-            self.Scrollbar.pack(side=RIGHT, fill='y')
-            self.Treeview.config(yscrollcommand=self.Scrollbar.set)
+        if self.IsScrollBarShown is False:
+            self.IsScrollBarShown = True
 
-            self.ScrollBarUpdateTimer = self.master.after(250, self.HideScrollBar)
-
-        else:
-            self.ScrollBarUpdateTimer = self.master.after(250, self.ShowScrollBar)
+            if self.Treeview.cget('height') < len(self.Treeview.get_children()):
+                self.Scrollbar.pack(side=RIGHT, fill='y')
+                self.Treeview.config(yscrollcommand=self.Scrollbar.set)
 
     def HideScrollBar(self):
         '''
-        Hide ScrollBar when the contents of TreeView is
-        less or equal than the height of TreeView
+        Hide ScrollBar when the contents of TreeView is less or equal than to
+        its height
         '''
 
-        if self.Treeview.cget('height') >= len(self.Treeview.get_children()):
-            self.Scrollbar.pack_forget()
-            self.ScrollBarUpdateTimer = self.master.after(250, self.ShowScrollBar)
+        if self.IsScrollBarShown:
+            self.IsScrollBarShown = False
 
-        else:
-            self.ScrollBarUpdateTimer = self.master.after(250, self.HideScrollBar)
+            if self.Treeview.cget('height') >= len(self.Treeview.get_children()):
+                self.Scrollbar.pack_forget()
+
+    def IsMarketOpen(self):
+        '''
+        Check if share market is open
+
+        Nepal's share market opens from 11 am to 3 pm from Sunday to Thursday
+        and from 11 am to 1 pm on Friday.
+        '''
+
+        # Getting Nepal's time when this program is ran from different time zone
+        utc_time = datetime.datetime.utcnow()
+        nepal_time = utc_time + datetime.timedelta(hours=5, minutes=45)
+        week_day = nepal_time.weekday
+
+        # When it is Saturday then market is closed
+        if week_day == 5:
+            return False
+
+        # When it is Friday then market is opened from 11 am to 1 pm
+        elif week_day == 4 and 11 <= nepal_time.hour <= 13:
+            return True
+
+        # If it is another day then market is opened from 11 am to 3 pm
+        elif 11 <= nepal_time.hour <= 15:
+            return True
+
+        return False
 
     def UpdateMarketPrice(self):
         '''
         Update changed market_price of respective company in Treeview
         '''
 
-        for child in self.Treeview.get_children():
-            thread = threading.Thread(target=self.ModifyTreeView, args=(child,), daemon=True)
-            thread.start()
+        if self.EndThread is False:
+            if self.IsMarketOpen():
+                for child in self.Treeview.get_children():
+                    thread = threading.Thread(target=self.ModifyTreeView, args=(child,), daemon=True)
+                    thread.start()
 
-        self.UpdateMarketPriceTimer = self.master.after(250, self.UpdateMarketPrice)
+            self.UpdateMarketPriceTimer = self.master.after(60000, self.UpdateMarketPrice)
 
     def ModifyTreeView(self, child):
         '''
-        This function actually searches current market_price from
-        the web, compares it with the current one present in the
-        TreeView and changes the current one with the fetched one
-        if it has been changed.
+        This function actually searches current market_price from the web,
+        compares it with the current one present in the TreeView and changes
+        the current one with the fetched one if it has been changed.
 
         When the search is being done, it takes a little time(like 5sec) which
         freezes the window for that about of time. To prevent this , this
         function gets called from the threading module.
+
+        param:
+            child       : Value of respective children of TreeView
         '''
 
-        tree_view_value = self.Treeview.item(child)['values']
+        TreeViewValue = self.Treeview.item(child)['values']
 
-        tree_view_company_abbr = tree_view_value[1]
-        tree_view_value_market_value = tree_view_value[-1]
+        TreeViewCompanyAbbr = TreeViewValue[1]
+        TreeViewValueMarketValue = TreeViewValue[-1]
 
-        web_market_value = self.GetData(tree_view_company_abbr)
+        WebMarketValue = self.GetData(TreeViewCompanyAbbr)
 
-        if web_market_value is not None:
-            web_market_value = web_market_value[-1]
+        if WebMarketValue is not None:
+            WebMarketValue = WebMarketValue[-1]
 
-            if tree_view_value_market_value != web_market_value:
-                insert_value = tree_view_value[:-1] + [web_market_value]
+            if TreeViewValueMarketValue != WebMarketValue:
+                InsertValue = TreeViewValue[:-1] + [WebMarketValue]
 
-                self.Treeview.item(child, values=insert_value)
+                self.Treeview.item(child, values=InsertValue)
 
     def GetData(self, company):
         '''
         Get values required to insert at TreeView
+
+        param:
+            company     : Name of Company
         '''
 
         try:
@@ -198,15 +240,18 @@ class DashBoard:
 
         for company in companies:
             try:
-                self.InsetToTreeView(company)
+                self.InsertToTreeView(company)
 
             except RuntimeError:
                 self.EndThread = True
                 return
 
-    def InsetToTreeView(self, FromComboBox):
+    def InsertToTreeView(self, FromComboBox):
         '''
         Insert values to the TreeView
+
+        param:
+            FromComboBox    : Company Name
         '''
 
         self.sn += 1
@@ -216,7 +261,9 @@ class DashBoard:
             values = [self.sn] + details
             self.Treeview.insert('', END, values=values)
 
-    def AddButtonCommand(self):
+        self.ShowScrollBar()
+
+    def AddButtonCommand(self, event=None):
         '''
         Add selected company to respective user
         '''
@@ -239,7 +286,7 @@ class DashBoard:
                 contents[username]['companies'] = companies
                 self.db.WriteJSON(contents)
 
-                thread = threading.Thread(target=self.InsetToTreeView, args=(FromComboBox,))
+                thread = threading.Thread(target=self.InsertToTreeView, args=(FromComboBox,))
                 thread.start()
 
             self.combobox.ComboVar.set('COMPANY NAME')
@@ -277,8 +324,8 @@ class DashBoard:
 
     def RightClickDelete(self):
         '''
-        Delete the selected company(ies) when
-        clicked to delete option from right click
+        Delete the selected company(ies) when clicked to delete option from
+        right click
         '''
 
         contents = self.db.ReadJSON()
@@ -303,20 +350,20 @@ class DashBoard:
                     values[0] = index
                     self.Treeview.item(child, values=values)
 
+                self.HideScrollBar()
+
     def BackButtonCommand(self):
         '''
-        Display homepage when user clicks back
-        button or log-out button
+        Display homepage when user clicks back button or log-out button
         '''
 
         self.EndThread = True
-        self.master.after_cancel(self.ScrollBarUpdateTimer)
         self.master.after_cancel(self.UpdateMarketPriceTimer)
 
-        if self.destroy_main_frame is None:
-            self.destroy_main_frame = self.MainFrame
+        if self.DestroyedMainFrame is None:
+            self.DestroyedMainFrame = self.MainFrame
 
         self.DashboardFrame.destroy()
-        self.destroy_main_frame.pack(padx=50, pady=50)
+        self.DestroyedMainFrame.pack(padx=50, pady=50)
 
         self.master.title('Nepal Stock Tracker')
