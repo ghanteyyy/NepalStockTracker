@@ -15,25 +15,27 @@ Usage:
 
         from NepalStockTracker import tracker
 
-        data = tracker('Company Symbol', show_gui=False)  # Returns stock information of the given company symbol
-        print(data.details)  # Printing the stock information from above returned data'''
+        data = tracker('Company Symbol', ShowGUI=False)  # Returns stock information of the given company symbol
+        print(data.details)  # Printing the stock information from above returned data
+'''
 
 
 __all__ = ['tracker']
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __author__ = 'ghanteyyy'
 
 
 from NepalStockTracker import main
 
 
-def tracker(company_symbol=None, show_gui=False):
+def tracker(CompanySymbol='', ShowGUI=False):
     '''
-    - company_symbol must be the abbreviation of company name
-    - show_gui must be either True or False
+    param:
+        CompanySymbol  : abbreviation of company name
+        ShowGUI        : True | False
     '''
 
-    nsm = main.StockTracker(company_symbol, show_gui)
+    nsm = main.StockTracker(CompanySymbol, ShowGUI)
 
     if nsm:
         return nsm
