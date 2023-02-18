@@ -5,26 +5,37 @@ from tkinter import messagebox
 
 try:  # When used as a package
     from NepalStockTracker.db import DB
-    import NepalStockTracker._photo_image as pi
+    from NepalStockTracker.Assets import Assets
     from NepalStockTracker._Entry import _Password_Entry
+    from NepalStockTracker.PasswordConditions import PasswordConditions
 
 except ImportError:  # When used as a normal script
     from db import DB
-    import _photo_image as pi
+    from Assets import Assets
     from _Entry import _Password_Entry
+    from PasswordConditions import PasswordConditions
 
 
 class NewPasswordUI:
     '''
-    Show widgets to enter New Password when
-    user clicks reset button after providing
-    credentials.
+    Show widgets to enter New Password when user clicks reset button after
+    providing credentials.
     '''
 
     def __init__(self, username, master, ForgotPasswordFrame, LoginFrame, RightFrame, InnerRightFrame):
+        '''
+        param:
+            username                : Name of User
+            master                  : Object of Tk
+            ForgotPasswordFrame     : Frame to place all widgets in ForgotPassword UI
+            LoginFrame              : Frame to place all widget in Login UI
+            RightFrame              : Right Frame in ForgotPassword.py tok keep widgets in right side
+            InnerRightFrame         : Frame to keep the widgets kept in RightFrame
+        '''
+
         self.db = DB()
-        self.bg = '#90d604'  # '#cbd0d6'
-        self.pi = pi.Image()
+        self.bg = '#aaff00'
+        self.Assets = Assets()
 
         self.master = master
         self.username = username
@@ -42,25 +53,34 @@ class NewPasswordUI:
         self.master.title('Nepal Stock Tracker | New Password')
 
         self.NewPasswordFrame = Frame(self.RightFrame, bg=self.bg)
-        self.NewPasswordFrame.pack(padx=50, pady=50)
+        self.NewPasswordFrame.pack(pady=50)
 
-        self.PasswordEntry = _Password_Entry(self.NewPasswordFrame, 'RPE', 'Password', self.bg, 40, True)
-        self.PasswordEntry.PasswordFrame.pack(padx=(48, 0))
+        self.PassFrame = Frame(self.NewPasswordFrame, bg=self.bg)
+        self.PassFrame.pack()
+        self.PasswordEntry = _Password_Entry(self.PassFrame, 'New Password', self.bg, 40)
+        self.PasswordEntry.PasswordFrame.pack()
 
-        self.ConfirmPasswordEntry = _Password_Entry(self.NewPasswordFrame, 'CRPE', 'Confirm Password', self.bg, 40, True)
-        self.ConfirmPasswordEntry.PasswordFrame.pack(padx=(48, 0), pady=10)
+        self.ConfirmPassFrame = Frame(self.NewPasswordFrame, bg=self.bg)
+        self.ConfirmPassFrame.pack()
+        self.ConfirmPasswordEntry = _Password_Entry(self.ConfirmPassFrame, 'Confirm Password', self.bg, 40)
+        self.ConfirmPasswordEntry.PasswordFrame.pack(pady=10)
 
-        self.SubmitButton = Button(self.NewPasswordFrame, image=self.pi.ConfirmImage, bg=self.bg, activebackground=self.bg, bd='0', cursor='hand2', font=Font(size=10, weight='bold'), command=self.SubmitButtonCommand)
+        self.PasswordHints = PasswordConditions(self.master, self.PassFrame, self.PasswordEntry.PasswordEntry, self.ConfirmPasswordEntry.PasswordEntry, self.ConfirmPassFrame, self.bg, 'black')
+
+        self.SubmitButton = Button(self.NewPasswordFrame, image=self.Assets.ConfirmImage, bg=self.bg, activebackground=self.bg, bd='0', cursor='hand2', font=Font(size=10, weight='bold'), command=self.SubmitButtonCommand)
         self.SubmitButton.pack(pady=(0, 15), ipady=10)
 
-        self.BackButton = Button(self.NewPasswordFrame, image=self.pi.BackImage, bd=0, cursor='hand2', bg=self.bg, activebackground=self.bg, command=self.BackButtonCommand)
-        self.BackButton.image = self.pi.BackImage
+        self.BackButton = Button(self.NewPasswordFrame, image=self.Assets.BackImage, bd=0, cursor='hand2', bg=self.bg, activebackground=self.bg, command=self.BackButtonCommand)
+        self.BackButton.image = self.Assets.BackImage
         self.BackButton.pack()
 
-    def SubmitButtonCommand(self):
+        self.PasswordEntry.PasswordEntry.Entry.bind('<Return>', self.SubmitButtonCommand)
+        self.ConfirmPasswordEntry.PasswordEntry.Entry.bind('<Return>', self.SubmitButtonCommand)
+
+    def SubmitButtonCommand(self, event=None):
         '''
-        Notify user that his/her password has been
-        changed and send them to login page.
+        Notify user that his/her password has been changed and send them to
+        login page.
         '''
 
         PasswordDefault = self.PasswordEntry.PasswordEntry.IsDefault
@@ -74,6 +94,9 @@ class NewPasswordUI:
 
         elif Password != ConfirmPassword:
             messagebox.showerror('ERR', 'Provide same passwords')
+
+        elif self.PasswordHints.IsPasswordStrong is False:
+            messagebox.showerror('ERR', 'Password does not meet requirements')
 
         else:
             contents = self.db.ReadJSON()
