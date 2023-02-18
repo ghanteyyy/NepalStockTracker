@@ -3,16 +3,17 @@ import tkinter.ttk as ttk
 
 try:  # When used as a package
     from NepalStockTracker._Entry import _Entry
+    from NepalStockTracker._ComboBox import _ComboBox
 
 except ImportError:  # When used as a normal script
     from _Entry import _Entry
+    from _ComboBox import _ComboBox
 
 
 class SecurityQuestionUI:
     '''
-    Show ComboBox widget containing different questions
-    and Entry widget to enter the answer to the corresponding
-    question
+    Show ComboBox widget containing different questions and Entry widget to
+    enter the answer to the corresponding question
     '''
 
     def __init__(self, win, frame, bg, pady=10):
@@ -42,10 +43,8 @@ class SecurityQuestionUI:
             'What is the name of a college you applied to but didn\'t attend?'
         ]
 
-        self.ComboBoxVar = StringVar()
-        self.ComboBoxVar.set('SECURITY QUESTION')
-        self.ComboBox = ttk.Combobox(self.frame, textvariable=self.ComboBoxVar, values=self.ComboValues, width=60, justify='center')
-        self.ComboBox.pack(pady=(0, pady), ipady=5)
+        self.ComboBox = _ComboBox(win, self.frame, self.ComboValues, DEFAULT_TEXT='SECURITY QUESTION', width=60)
+        self.ComboBox.ComboBox.pack(pady=(0, pady), ipady=5)
 
-        self.SecurityQuestionAnswerEntry = _Entry(self.frame, 'SQA', 'Security Question Answer', width=63, bg=bg)
+        self.SecurityQuestionAnswerEntry = _Entry(self.frame, 'Security Question Answer', width=63, bg=bg)
         self.SecurityQuestionAnswerEntry.Frame.pack(pady=(0, pady))
