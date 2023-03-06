@@ -33,7 +33,7 @@ class Search:
             contents = source.json()
 
             companies = [content['l'] for content in contents]
-            companies = list(filter(lambda x: not x.lower().startswith('test'), companies))
+            companies = list(filter(lambda x: not x.lower().startswith('test') and not x[0].isdigit(), companies))
             companies.sort()
 
             return companies
