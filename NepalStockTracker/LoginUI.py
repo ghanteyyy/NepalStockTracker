@@ -35,7 +35,6 @@ class LoginUI:
             search          : Object of Search.Search to search company
         '''
 
-        self.db = DB()
         self.bg = '#cbd0d6'
         self.LOGIN = LOGIN
         self.SEARCH = search
@@ -102,23 +101,18 @@ class LoginUI:
         PasswordDefault = self.PasswordEntry.PasswordEntry.IsDefault
 
         username = self.UsernameEntry.var.get().strip()
-        username = hashlib.sha256(username.encode()).hexdigest()
         password = self.PasswordEntry.PasswordEntry.var.get().strip()
-
-        contents = self.db.ReadJSON()
 
         if any([UserNameDefault, PasswordDefault]):
             messagebox.showerror('ERR', 'Provide valid values')
             return
 
-        password_from_file = contents[username]['password']
-        encrypted_password = hashlib.sha256(password.encode()).hexdigest()
-
-        if password_from_file == encrypted_password:
+        if DB().Login(username, password):
             self.UsernameEntry.SetToDefault()
             self.PasswordEntry.PasswordEntry.SetToDefault()
 
-            self.LOGIN.login(username)
+            self.LOGIN.login(hashlib.sha256(username.encode()).hexdigest())
+
             self.Dashboard = DashBoard(self.master, self.ComboValues, self.LOGIN, self.LoginFrame, self.SEARCH, self.MainFrame)
             self.Dashboard.ShowWidgets()
 

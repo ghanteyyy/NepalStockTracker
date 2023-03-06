@@ -1,5 +1,3 @@
-import string
-import hashlib
 from tkinter import *
 from tkinter.font import Font
 from tkinter import messagebox
@@ -27,7 +25,6 @@ class SignUpUI:
     '''
 
     def __init__(self, master, MainFrame, Login, MainFrameBg):
-        self.db = DB()
         self.Assets = Assets()
         self.RightBG = '#e3be02'
         self.MainFrameBg = MainFrameBg
@@ -99,11 +96,7 @@ class SignUpUI:
         ConfirmPassword = self.ConfirmPasswordEntry.PasswordEntry.var.get().strip()
 
         username = self.UsernameEntry.var.get().strip()
-        HashedUsername = hashlib.sha256(username.encode()).hexdigest()
         SecurityQuestion = self.SecurityQuestionsUI.ComboBox.ComboVar.get()
-
-        db = DB()
-        contents = db.ReadJSON()
 
         if any([UserNameDefault, PasswordDefault, SecurityQuestionAnswerDefault, ConfirmPasswordDefault]):
             messagebox.showerror('Invalid', 'Provide valid values')
@@ -111,7 +104,7 @@ class SignUpUI:
         elif SecurityQuestion not in self.SecurityQuestionsUI.ComboValues:
             messagebox.showerror('Invalid', 'Select valid SECURITY QUESTION')
 
-        elif HashedUsername in contents:
+        elif DB().UserExists(username):
             messagebox.showerror('ERR', 'Username already exists')
 
         elif len(username) < 5:
@@ -124,25 +117,8 @@ class SignUpUI:
             messagebox.showerror('ERR', 'Passwords are incorrect')
 
         else:
-            question = SecurityQuestion.lower()
             answer = self.SecurityQuestionsUI.SecurityQuestionAnswerEntry.var.get().lower()
-
-            encrypted_answer = hashlib.sha256(answer.encode()).hexdigest()
-            encrypted_password = hashlib.sha256(password.encode()).hexdigest()
-            encrypted_question = hashlib.sha256(question.encode()).hexdigest()
-
-            data = {
-                HashedUsername:
-                    {
-                        'question': encrypted_question,
-                        'answer': encrypted_answer,
-                        'password': encrypted_password,
-                        'companies': []
-                    }
-            }
-
-            contents.update(data)
-            self.db.WriteJSON(contents)
+            DB().AddNewUser(username, SecurityQuestion, answer, password)
 
             messagebox.showinfo('Success', 'Account has been created!!!\n\nEnter credentials to LOGIN-IN')
             self.SignupFrame.destroy()

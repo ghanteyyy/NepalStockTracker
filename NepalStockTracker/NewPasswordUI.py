@@ -1,4 +1,3 @@
-import hashlib
 from tkinter import *
 from tkinter.font import Font
 from tkinter import messagebox
@@ -33,7 +32,6 @@ class NewPasswordUI:
             InnerRightFrame         : Frame to keep the widgets kept in RightFrame
         '''
 
-        self.db = DB()
         self.bg = '#aaff00'
         self.Assets = Assets()
 
@@ -99,10 +97,7 @@ class NewPasswordUI:
             messagebox.showerror('ERR', 'Password does not meet requirements')
 
         else:
-            contents = self.db.ReadJSON()
-            EncryptedPassword = hashlib.sha256(Password.encode()).hexdigest()
-
-            contents[self.username]['password'] = EncryptedPassword
+            DB().ResetPassword(self.username, Password)
 
             messagebox.showinfo('Success', 'You password has been changed!!!\n\nNow you can login')
             self.master.title('Nepal Stock Tracker | LOGIN')

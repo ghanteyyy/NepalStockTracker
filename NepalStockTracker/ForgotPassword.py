@@ -32,7 +32,6 @@ class ForgotPasswordUI:
             LoginFrame  : Frame used to place Login widgets
         '''
 
-        self.db = DB()
         self.bg = '#cbd0d6'
         self.Assets = Assets()
         self.RightBG = '#aaff00'
@@ -85,26 +84,26 @@ class ForgotPasswordUI:
         When user clicks reset button after entering credentials
         '''
 
-        contents = self.db.ReadJSON()
         UsernameEntryDefault = self.UsernameEntry.IsDefault
         SecurityQuestionEntryDefault = self.SecurityQuestion.SecurityQuestionAnswerEntry.IsDefault
 
         username = self.UsernameEntry.var.get().strip()
-        username = hashlib.sha256(username.encode()).hexdigest()
         SecurityQuestionCombo = self.SecurityQuestion.ComboBox.ComboVar.get().strip()
-        SecurityAnswer = self.SecurityQuestion.SecurityQuestionAnswerEntry.var.get().strip()
+        SecurityAnswer = self.SecurityQuestion.SecurityQuestionAnswerEntry.var.get().strip().lower()
+
+        ResetDetails = DB().ResetDetails(username)
 
         if any([UsernameEntryDefault, SecurityQuestionEntryDefault]) or SecurityQuestionCombo not in self.SecurityQuestion.ComboValues:
             messagebox.showerror('ERR', 'Provide valid information')
 
-        elif username not in contents:
+        elif ResetDetails is False:
             messagebox.showerror('ERR', f'Username: "{username}" not found')
 
         else:
             EncryptedSecurityAnswer = hashlib.sha256(SecurityAnswer.encode()).hexdigest()
             EncryptedSecurityQuestion = hashlib.sha256(SecurityQuestionCombo.encode()).hexdigest()
 
-            if EncryptedSecurityQuestion != contents[username]['question'] or EncryptedSecurityAnswer != contents[username]['answer']:
+            if EncryptedSecurityQuestion not in ResetDetails or EncryptedSecurityAnswer not in ResetDetails:
                 messagebox.showerror('ERR', 'Invalid Security Question or Security Answer')
 
             else:

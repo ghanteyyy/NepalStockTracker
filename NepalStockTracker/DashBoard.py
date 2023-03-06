@@ -35,7 +35,6 @@ class DashBoard:
         '''
 
         self.sn = 0
-        self.db = DB()
         self.LOGIN = LOGIN
         self.master = master
         self.PrevHash = None
@@ -236,7 +235,7 @@ class DashBoard:
         Insert values stored in files each time when dashboard is shown
         '''
 
-        companies = self.db.ReadJSON()[self.username]['companies']
+        companies = DB().GetCompanyName(self.LOGIN.username)
 
         for company in companies:
             try:
@@ -274,18 +273,18 @@ class DashBoard:
             messagebox.showerror('ERR', 'Select valid company name')
 
         else:
-            contents = self.db.ReadJSON()
             username = self.LOGIN.username
+            DB().AddCompany(username, FromComboBox)
 
+            CompanyFromTreeView = []
             FromComboBox = FromComboBox.split()[0]
-            companies = contents[username]['companies']
 
-            if FromComboBox not in companies:
-                companies.append(FromComboBox)
+            for child in self.Treeview.get_children():
+                values = self.Treeview.item(child)['values'][0]
 
-                contents[username]['companies'] = companies
-                self.db.WriteJSON(contents)
+                CompanyFromTreeView.append(values)
 
+            if FromComboBox not in CompanyFromTreeView:
                 thread = threading.Thread(target=self.InsertToTreeView, args=(FromComboBox,))
                 thread.start()
 
@@ -328,19 +327,16 @@ class DashBoard:
         right click
         '''
 
-        contents = self.db.ReadJSON()
         CurrentSelections = self.Treeview.selection()
 
         if CurrentSelections:
-            companies = contents[self.username]['companies']
-
             for selection in CurrentSelections:
+                self.sn -= 1
                 values = self.Treeview.item(selection)['values'][1]
-                companies.remove(values)
-                self.Treeview.delete(selection)
 
-            contents[self.username]['companies'] = companies
-            self.db.WriteJSON(contents)
+                DB().RemoveCompany(values)
+
+                self.Treeview.delete(selection)
 
             for idx, child in enumerate(self.Treeview.get_children()):
                 index = idx + 1
